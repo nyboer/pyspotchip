@@ -28,18 +28,18 @@ class track_data:
 def get_analysis(tracks):
     print(tracks)
     if len(tracks) > 0:
-        section_times = list()
+        track_data.section_times = list()
+        track_data.segments = list()
         tids = tracks[0:]
         count = len(tids)
-        print('# of tracks: '+str(count) )
-
         start = time.time()
         features = spc.audio_features(tids)
         delta = time.time() - start
         print (">>features retrieved in %.2f seconds" % (delta,))
-        #keys:
-        for v in features[0]:
-            print (v)
+
+        # print keys to dict:
+        # for v in features[0]:
+        #     print (v)
 
         track_data.key = features[0]['key']
         track_data.maj_or_min = features[0]['mode']
@@ -63,6 +63,7 @@ def get_analysis(tracks):
                 track_data.section_tempo = tempo
                 key = analysis['sections'][v]['key']
                 track_data.section_key = key
+        # if there's no analysis data, we'll make some
         except:
             section_count = 10
             defdata = [0,1000,2000,3000,4000,5000,6000,7000,8000,9000]
