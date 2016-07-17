@@ -122,7 +122,7 @@ def to_next_section(t):
         print ('next section at time: '+str(totime))
         session.player.seek(totime)
 
-def init_playlist(i,playlists):
+def init_playlist(i):
     global track_count
     playlist = playlists['items'][i]
     track_count = playlist['tracks']['total']

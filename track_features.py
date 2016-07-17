@@ -49,18 +49,26 @@ def get_analysis(tracks):
         #fetch data from the returned object:
         for i in range( 0,count ):
             print(features[i]['analysis_url'])
-        analysis = spc._get(features[i]['analysis_url'])
-        #print(json.dumps(analysis, indent=4))
-        #add section start times to list
-        section_count = len( analysis['sections'] )
-        track_data.segments.append(analysis['segments'])
-        #print('--section data--'+str(section_count))
-        for v in range(0,section_count):
-            starttime = analysis['sections'][v]['start']
-            track_data.section_times.append(starttime)
-            tempo = analysis['sections'][v]['tempo']
-            track_data.section_tempo = tempo
-            key = analysis['sections'][v]['key']
-            track_data.section_key = key
+        try:
+            analysis = spc._get(features[i]['analysis_url'])
+            #print(json.dumps(analysis, indent=4))
+            #add section start times to list
+            section_count = len( analysis['sections'] )
+            track_data.segments.append(analysis['segments'])
+            #print('--section data--'+str(section_count))
+            for v in range(0,section_count):
+                starttime = analysis['sections'][v]['start']
+                track_data.section_times.append(starttime)
+                tempo = analysis['sections'][v]['tempo']
+                track_data.section_tempo = tempo
+                key = analysis['sections'][v]['key']
+                track_data.section_key = key
+        except:
+            section_count = 10
+            defdata = [0,1000,2000,3000,4000,5000,6000,7000,8000,9000]
+            track_data.segments.append(defdata)
+            track_data.section_times.append(0)
+            track_data.section_tempo = 120
+            track_data.section_key = 0
 
         return track_data
