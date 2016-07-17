@@ -26,7 +26,7 @@ else:
 # GLOBAL VARIABLES
 track_uri = 'spotify:track:7Ke18a4dLDyjdBRNd5iLLM'
     #some other tracks: 5uNlgK7FEg6r9BGy12P9Sx 5GgUWb9o5ga3F7o6MYyDHO 1VsNbze4CN1b1QgVdWlc3K
-#let's declare a couple variables that show up around these parts
+#let's declare a few global variables that we need for various functions
 track_index = 0
 track_count = 0
 section_count = 0
@@ -122,15 +122,14 @@ def to_next_section(t):
         print ('next section at time: '+str(totime))
         session.player.seek(totime)
 
-def init_playlist(i):
+def init_playlist(pl_index):
     global track_count
-    playlist = playlists['items'][i]
+    playlist = playlists['items'][pl_index]
     track_count = playlist['tracks']['total']
     print ('playlist name: ' + playlist['name'] + ' & track count %d' % track_count )
     current_playlist = sp.user_playlist(spot_username, playlist['id'],fields="tracks")
     tracks = current_playlist['tracks']
     return tracks
-
 
 def login():
     #register for Spotify Web API. this is kind of redundant with what happens in track_features.py but...
@@ -151,6 +150,12 @@ def login():
     print 'logged in as '+session.user_name
 
     return toke
+
+def cleanup():
+    session.logout()
+    session.player.play(False)
+    session.player.unload()
+    audio.off()
 
 def get_playlists():
     playlists = sp.user_playlists(spot_username)
@@ -183,7 +188,7 @@ def show_tracks(tracks):
 token = login()
 sp = spotipy.Spotify(auth=token)
 playlists = get_playlists()
-tracks = init_playlist(0,playlists)
+tracks = init_playlist(0)
 playlist_track(True)
 
 # Wait for playback to complete or Ctrl+C or, better, Ctrl+Shift+\. There is probably a better way to do this.
