@@ -66,7 +66,7 @@ def get_analysis(tracks):
         # if there's no analysis data, we'll make some
         except:
             section_count = 10
-            defdata = [0,1000,2000,3000,4000,5000,6000,7000,8000,9000]
+            defdata = [0,10,30,50,70,90,110,130,150,180]
             track_data.segments.append(defdata)
             track_data.section_times.append(0)
             track_data.section_tempo = 120
