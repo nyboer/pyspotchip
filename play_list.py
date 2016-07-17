@@ -62,6 +62,13 @@ def on_connection_state_updated(session):
 #callback from libspotify
 def on_end_of_track(self):
     playlist_track()
+def play_pause():
+    if player.state == spotify.player.PlayerState.PLAYING:
+        session.player.pause()
+    elif player.state == spotify.player.PlayerState.PAUSED:
+        session.player.play()
+    elif player.state == spotify.player.PlayerState.UNLOADED:
+        print 'nothing loaded to play'
 
 def playlist_track(tracks):
     global track_index
@@ -79,6 +86,7 @@ def playlist_track(tracks):
         track = session.get_track(track_uri).load()
         session.player.load(track)
         session.player.play()
+        print session.player.state == session.player.PlayerState.PLAYING
         #end_of_track.set()
     #increase track number to play from list. Playback of list is looped by modulo
     track_index = (track_index + 1) % tcount
