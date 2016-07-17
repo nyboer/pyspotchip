@@ -23,7 +23,6 @@ if sys.argv[1:]:
 else:
     playlist_index = 0
 
-
 # GLOBAL VARIABLES
 track_uri = 'spotify:track:7Ke18a4dLDyjdBRNd5iLLM'
     #some other tracks: 5uNlgK7FEg6r9BGy12P9Sx 5GgUWb9o5ga3F7o6MYyDHO 1VsNbze4CN1b1QgVdWlc3K
@@ -33,7 +32,6 @@ track_count = 0
 section_count = 0
 #for examples of recalling stored playlists
 stored_playlists = [1,2]
-
 
 #track Keyboard presses
 kb = KBHit()
@@ -62,18 +60,21 @@ def on_connection_state_updated(session):
 #callback from libspotify
 def on_end_of_track(self):
     playlist_track()
+
 def play_pause():
-    if player.state == spotify.player.PlayerState.PLAYING:
+    if session.player.state == spotify.player.PlayerState.PLAYING:
         session.player.pause()
-    elif player.state == spotify.player.PlayerState.PAUSED:
+    elif session.player.state == spotify.player.PlayerState.PAUSED:
         session.player.play()
-    elif player.state == spotify.player.PlayerState.UNLOADED:
+    elif session.player.state == spotify.player.PlayerState.UNLOADED:
         print 'nothing loaded to play'
 
-def playlist_track(tracks):
+def playlist_track(tostart=False):
     global track_index
     global track_uri
     global section_times
+    if tostart:
+        track_index = 0
     tcount = len(tracks['items'])
     if track_index<tcount:
         current_track = tracks['items'][track_index]['track']
@@ -82,14 +83,17 @@ def playlist_track(tracks):
         tid = current_track['id']
         track_data = get_analysis([tid]) #this takes several secs
         section_times = track_data.section_times
-        print('currently playing: '+track_name+' uri: '+track_uri)
-        track = session.get_track(track_uri).load()
-        session.player.load(track)
+        print('Name: '+track_name)
+        load_track(track_uri)
         session.player.play()
-        print session.player.state == session.player.PlayerState.PLAYING
         #end_of_track.set()
     #increase track number to play from list. Playback of list is looped by modulo
     track_index = (track_index + 1) % tcount
+
+def load_track(uri):
+    track = session.get_track(uri).load()
+    session.player.load(track)
+    #end_of_track.set()
 
 #add current track to user's saved songs
 def add_to_usongs():
@@ -118,22 +122,22 @@ def to_next_section(t):
         print ('next section at time: '+str(totime))
         session.player.seek(totime)
 
-def start_playlist(i,playlists):
-    global track_count, track_index
-    track_index = 0 #start at the beginning
+def init_playlist(i,playlists):
+    global track_count
     playlist = playlists['items'][i]
     track_count = playlist['tracks']['total']
     print ('playlist name: ' + playlist['name'] + ' & track count %d' % track_count )
     current_playlist = sp.user_playlist(spot_username, playlist['id'],fields="tracks")
     tracks = current_playlist['tracks']
-    playlist_track(tracks)
+    return tracks
+
 
 def login():
     #register for Spotify Web API. this is kind of redundant with what happens in track_features.py but...
     client_credentials_manager = SpotifyClientCredentials()
     print('get auth token')
     scope = 'user-library-modify'
-    token = util.prompt_for_user_token(spot_username, scope)
+    toke = util.prompt_for_user_token(spot_username, scope)
     #sp_wapi = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
     # Register event listeners for libspotify
@@ -146,7 +150,7 @@ def login():
     logged_in.wait()
     print 'logged in as '+session.user_name
 
-    return token
+    return toke
 
 def get_playlists():
     playlists = sp.user_playlists(spot_username)
@@ -179,7 +183,8 @@ def show_tracks(tracks):
 token = login()
 sp = spotipy.Spotify(auth=token)
 playlists = get_playlists()
-start_playlist(0,playlists)
+tracks = init_playlist(0,playlists)
+playlist_track(True)
 
 # Wait for playback to complete or Ctrl+C or, better, Ctrl+Shift+\. There is probably a better way to do this.
 
@@ -194,9 +199,11 @@ try:
             if ord(c) == 115: # s
                 add_to_usongs()
             if ord(c) == 49: # 1
-                start_playlist(stored_playlists[0])
+                tracks = init_playlist(stored_playlists[0])
+                playlist_track(True)
             if ord(c) == 50: # 2
-                start_playlist(stored_playlists[1])
+                tracks = init_playlist(stored_playlists[1])
+                playlist_track(True)
             if ord(c) == 46: # .
                 to_next_section(section_count)
                 section_count = (section_count + 1) % len(section_times)
