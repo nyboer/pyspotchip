@@ -42,4 +42,5 @@ creds.py
 spotify_appkey*
 play_list.sh
 play_analysis.sh
+spotcreds.sh
 twit_init.py

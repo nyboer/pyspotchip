@@ -16,25 +16,24 @@ import spotipy #web api for python
 from spotipy.oauth2 import SpotifyClientCredentials
 import spotipy.util as util
 import spotify #libspotify, needed for playback
-from creds import spot_username, spot_password
+from creds import spot_username, spot_password #from creds.py
 
 if sys.argv[1:]:
     playlist_index = sys.argv[1]
 else:
     playlist_index = 0
 
-#register for Spotify Web API. this is kind of redundant with what happens in track_features.py but...
-client_credentials_manager = SpotifyClientCredentials()
-print('gimmie token')
-scope = 'user-library-modify'
-token = util.prompt_for_user_token(spot_username, scope)
-#sp_wapi = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
+# GLOBAL VARIABLES
+track_uri = 'spotify:track:7Ke18a4dLDyjdBRNd5iLLM'
+    #some other tracks: 5uNlgK7FEg6r9BGy12P9Sx 5GgUWb9o5ga3F7o6MYyDHO 1VsNbze4CN1b1QgVdWlc3K
+#let's declare a couple variables that show up around these parts
+track_index = 0
+track_count = 0
+section_count = 0
 #for examples of recalling stored playlists
 stored_playlists = [1,2]
 
-track_uri = 'spotify:track:7Ke18a4dLDyjdBRNd5iLLM'
-    #some other tracks: 5uNlgK7FEg6r9BGy12P9Sx 5GgUWb9o5ga3F7o6MYyDHO 1VsNbze4CN1b1QgVdWlc3K
 
 #track Keyboard presses
 kb = KBHit()
@@ -42,41 +41,39 @@ kb = KBHit()
 # Assuming a spotify_appkey.key in the current dir
 session = spotify.Session()
 
-# Process events in the background
-loop = spotify.EventLoop(session)
-loop.start()
-
 # Connect an audio sink
 audio = spotify.AlsaSink(session)
 
+# Process events in the background
+loop = spotify.EventLoop(session)
+loop.start()
 # Events for coordination
 logged_in = threading.Event()
 end_of_track = threading.Event()
 
-#let's declare a couple variables that show up around these parts
-track_index = 0
-track_count = 0
-section_count = 0
-
+#utility function
 def clamp(n, smallest, largest): return max(smallest, min(n, largest))
 
+#callback from libspotify
 def on_connection_state_updated(session):
     if session.connection.state is spotify.ConnectionState.LOGGED_IN:
         logged_in.set()
 
+#callback from libspotify
 def on_end_of_track(self):
     playlist_track()
 
-def playlist_track():
-    print ('track_count in function: '+str(track_count) )
+def playlist_track(tracks):
     global track_index
     global track_uri
     global section_times
-    if track_index<track_count:
-        track_uri = playlist.tracks[track_index].link.uri
-        track_name = playlist.tracks[track_index].name
-        tid = [ track_uri.split(':')[2] ] #get track ID from end of uri
-        track_data = get_analysis(tid) #this takes a LONG time
+    tcount = len(tracks['items'])
+    if track_index<tcount:
+        current_track = tracks['items'][track_index]['track']
+        track_uri = current_track['uri']
+        track_name = current_track['name']
+        tid = current_track['id']
+        track_data = get_analysis([tid]) #this takes several secs
         section_times = track_data.section_times
         print('currently playing: '+track_name+' uri: '+track_uri)
         track = session.get_track(track_uri).load()
@@ -84,7 +81,7 @@ def playlist_track():
         session.player.play()
         #end_of_track.set()
     #increase track number to play from list. Playback of list is looped by modulo
-    track_index = (track_index + 1) % track_count
+    track_index = (track_index + 1) % tcount
 
 #add current track to user's saved songs
 def add_to_usongs():
@@ -113,50 +110,71 @@ def to_next_section(t):
         print ('next section at time: '+str(totime))
         session.player.seek(totime)
 
-def start_playlist(i):
-    global playlist, track_count, track_index
+def start_playlist(i,playlists):
+    global track_count, track_index
     track_index = 0 #start at the beginning
-    playlist = session.playlist_container[i]
-    playlist.load()
-    track_count = len(playlist.tracks)
-    print ('playlist name: ' + playlist.name + ' Playlist track count %d' % (len(playlist.tracks)) )
-    playlist_track()
+    playlist = playlists['items'][i]
+    track_count = playlist['tracks']['total']
+    print ('playlist name: ' + playlist['name'] + ' & track count %d' % track_count )
+    current_playlist = sp.user_playlist(spot_username, playlist['id'],fields="tracks")
+    tracks = current_playlist['tracks']
+    playlist_track(tracks)
 
-    # first_track = playlist.tracks[track_index].link.uri
-    # first_name = playlist.tracks[track_index].name
-    # print ('track 0 uri: ' + first_track + ' track 0 name: ' + first_name)
-    # # Play the first track
-    # track = session.get_track(first_track).load()
-    # session.player.load(track)
-    # session.player.play()
+def login():
+    #register for Spotify Web API. this is kind of redundant with what happens in track_features.py but...
+    client_credentials_manager = SpotifyClientCredentials()
+    print('get auth token')
+    scope = 'user-library-modify'
+    token = util.prompt_for_user_token(spot_username, scope)
+    #sp_wapi = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
-# Register event listeners
-session.on(
-    spotify.SessionEvent.CONNECTION_STATE_UPDATED, on_connection_state_updated)
-session.on(spotify.SessionEvent.END_OF_TRACK, on_end_of_track)
+    # Register event listeners for libspotify
+    session.on(spotify.SessionEvent.CONNECTION_STATE_UPDATED, on_connection_state_updated)
+    session.on(spotify.SessionEvent.END_OF_TRACK, on_end_of_track)
 
- # Block until Login for libspotify is complete
-print('\n...Waiting for Login to Complete...')
-session.login(spot_username, spot_password, remember_me=True)
-logged_in.wait()
-print 'logged in as '+session.user_name
+    # Block until Login for libspotify is complete
+    print('\n...Waiting for Login to Complete...')
+    session.login(spot_username, spot_password, remember_me=True)
+    logged_in.wait()
+    print 'logged in as '+session.user_name
 
+    return token
 
-# Assuming a previous login with remember_me=True and a proper logout
-#session.relogin()
-#logged_in.wait()
+def get_playlists():
+    playlists = sp.user_playlists(spot_username)
+    pcount = len(playlists['items'])
+    print 'User # of playlists: '+str(pcount)
+    return playlists
 
-#now that we are logged in, let's get some playlist info
-listcount = len(session.playlist_container)
-print('Playlist count %d' % listcount )
-#initialize the playlist object with the first one in the container.
-if listcount:
-    playlist = session.playlist_container[0]
-    start_playlist(0)
-else:
-    print 'no playlists found'
+def print_all_tracks(playlists):
+    print 'Number of Playlists: '+str( len(playlists['items']) )
+    for playlist in playlists['items']:
+        print '-  -  -  -'
+        print playlist['owner']['id']
+        print playlist['name']
+        #print playlist['id']
+        print ' total tracks', playlist['tracks']['total']
+        results = sp.user_playlist(spot_username, playlist['id'], fields="tracks,next")
+        tracks = results['tracks']
+        show_tracks(tracks)
+        while tracks['next']:
+            tracks = sp.next(tracks)
+            show_tracks(tracks)
+
+def show_tracks(tracks):
+    for i, item in enumerate(tracks['items']):
+        track = item['track']
+        output = u' '.join( (track['artists'][0]['name'], track['name']) ).encode('utf-8').strip()
+        print '  '+str(i)+ ' ' +output
+
+#initialize
+token = login()
+sp = spotipy.Spotify(auth=token)
+playlists = get_playlists()
+start_playlist(0,playlists)
 
 # Wait for playback to complete or Ctrl+C or, better, Ctrl+Shift+\. There is probably a better way to do this.
+
 try:
     while not end_of_track.wait(0.1):
         if kb.kbhit():

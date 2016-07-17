@@ -5,10 +5,13 @@ import spotipy
 import spotipy.util as util
 
 def show_tracks(tracks):
+    print '==============='
+    print tracks['items']
+    print '==============='
     for i, item in enumerate(tracks['items']):
         track = item['track']
-        print "   %d %32.32s %s" % (i, track['artists'][0]['name'],
-            track['name'])
+        output = u' '.join( (track['artists'][0]['name'], track['name'], track['uri']) ).encode('utf-8').strip()
+        print '  '+str(i)+ ' ' +output
 
 
 if __name__ == '__main__':
@@ -24,14 +27,17 @@ if __name__ == '__main__':
     if token:
         sp = spotipy.Spotify(auth=token)
         playlists = sp.user_playlists(username)
+        pcount = len(playlists['items'])
+        print 'Number of Playlists: ',str(pcount)
         for playlist in playlists['items']:
-            if playlist['owner']['id'] == username:
-                print
+                print '-  -  -  -'
+                print playlist['owner']['id']
                 print playlist['name']
+                print playlist['uri']
                 print '  total tracks', playlist['tracks']['total']
-                results = sp.user_playlist(username, playlist['id'],
-                    fields="tracks,next")
+                results = sp.user_playlist(username, playlist['id'],fields="tracks,next")
                 tracks = results['tracks']
+                print ' alt total: '+str(len(tracks['items']))
                 show_tracks(tracks)
                 while tracks['next']:
                     tracks = sp.next(tracks)

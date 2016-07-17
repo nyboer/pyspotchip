@@ -11,8 +11,8 @@ import time
 import sys
 
 client_credentials_manager = SpotifyClientCredentials()
-sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
-sp.trace=True
+spc = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
+spc.trace=False
 #args = sys.argv
 
 class track_data:
@@ -34,7 +34,7 @@ def get_analysis(tracks):
         print('# of tracks: '+str(count) )
 
         start = time.time()
-        features = sp.audio_features(tids)
+        features = spc.audio_features(tids)
         delta = time.time() - start
         print (">>features retrieved in %.2f seconds" % (delta,))
         #keys:
@@ -49,19 +49,18 @@ def get_analysis(tracks):
         #fetch data from the returned object:
         for i in range( 0,count ):
             print(features[i]['analysis_url'])
-        url = features[i]['analysis_url']
-        response = urllib.urlopen(url)
-        data = json.loads(response.read())
+        analysis = spc._get(features[i]['analysis_url'])
+        #print(json.dumps(analysis, indent=4))
         #add section start times to list
-        section_count = len( data['sections'] )
-        track_data.segments.append(data['segments'])
+        section_count = len( analysis['sections'] )
+        track_data.segments.append(analysis['segments'])
         #print('--section data--'+str(section_count))
         for v in range(0,section_count):
-            starttime = data['sections'][v]['start']
+            starttime = analysis['sections'][v]['start']
             track_data.section_times.append(starttime)
-            tempo = data['sections'][v]['tempo']
+            tempo = analysis['sections'][v]['tempo']
             track_data.section_tempo = tempo
-            key = data['sections'][v]['key']
+            key = analysis['sections'][v]['key']
             track_data.section_key = key
 
         return track_data
