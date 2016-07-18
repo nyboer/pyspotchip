@@ -29,6 +29,7 @@ track_uri = 'spotify:track:7Ke18a4dLDyjdBRNd5iLLM'
 track_index = 0
 track_count = 0
 section_count = 0
+section_times = list()
 #for examples of recalling stored playlists
 stored_playlists = [1,2]
 
@@ -151,7 +152,6 @@ def login():
     session.login(spot_username, spot_password, remember_me=True)
     logged_in.wait()
     print 'logged in as '+session.user_name
-
     return toke
 
 def cleanup():
@@ -166,7 +166,7 @@ def get_playlists():
     print 'User # of playlists: '+str(list_count)
     return playlists
 
-def next_playlist():
+def nextPlaylist():
     global current_playlist
     global tracks
     list_count = len(playlists['items'])
@@ -217,7 +217,7 @@ try:
             if ord(c) == 115: # s
                 add_to_usongs()
             if ord(c) == 48: # 0
-                next_playlist()
+                nextPlaylist()
             if ord(c) == 49: # 1
                 current_playlist = stored_playlists[0]
                 tracks = init_playlist(current_playlist)
