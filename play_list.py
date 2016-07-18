@@ -24,9 +24,8 @@ else:
     playlist_index = 0
 
 # GLOBAL VARIABLES
-track_uri = 'spotify:track:7Ke18a4dLDyjdBRNd5iLLM'
-    #some other tracks: 5uNlgK7FEg6r9BGy12P9Sx 5GgUWb9o5ga3F7o6MYyDHO 1VsNbze4CN1b1QgVdWlc3K
 #let's declare a few global variables that we need for various functions
+track_uri = 'spotify:track:7Ke18a4dLDyjdBRNd5iLLM'
 track_index = 0
 track_count = 0
 section_count = 0
@@ -163,9 +162,17 @@ def cleanup():
 
 def get_playlists():
     playlists = sp.user_playlists(spot_username)
-    pcount = len(playlists['items'])
-    print 'User # of playlists: '+str(pcount)
+    list_count = len(playlists['items'])
+    print 'User # of playlists: '+str(list_count)
     return playlists
+
+def next_playlist():
+    global current_playlist
+    list_count = len(playlists['items'])
+    # make sure it doesn't go out of bounds and wraps:
+    current_playlist = (current_playlist + 1) % list_count
+    init_playlist(current_playlist)
+    playlist_track(True)
 
 def print_all_tracks(playlists):
     print 'Number of Playlists: '+str( len(playlists['items']) )
@@ -188,11 +195,12 @@ def show_tracks(tracks):
         output = u' '.join( (track['artists'][0]['name'], track['name']) ).encode('utf-8').strip()
         print '  '+str(i)+ ' ' +output
 
-#initialize
+#initialize some Globals
 token = login()
 sp = spotipy.Spotify(auth=token)
 playlists = get_playlists()
-tracks = init_playlist(0)
+current_playlist = 0
+tracks = init_playlist(current_playlist)
 playlist_track(True)
 
 # Wait for playback to complete or Ctrl+C or, better, Ctrl+Shift+\. There is probably a better way to do this.
@@ -207,11 +215,15 @@ try:
                 to_next_track()
             if ord(c) == 115: # s
                 add_to_usongs()
+            if ord(c) == 48: # 0
+                next_playlist()
             if ord(c) == 49: # 1
-                tracks = init_playlist(stored_playlists[0])
+                current_playlist = stored_playlists[0]
+                tracks = init_playlist(current_playlist)
                 playlist_track(True)
             if ord(c) == 50: # 2
-                tracks = init_playlist(stored_playlists[1])
+                current_playlist = stored_playlists[1]
+                tracks = init_playlist(current_playlist)
                 playlist_track(True)
             if ord(c) == 46: # .
                 to_next_section(section_count)
