@@ -68,7 +68,7 @@ def get_analysis(tracks):
             section_count = 10
             defdata = [0,10,30,50,70,90,110,130,150,180]
             track_data.segments.append(defdata)
-            track_data.section_times.append(0)
+            track_data.section_times.append(defdata)
             track_data.section_tempo = 120
             track_data.section_key = 0
 
