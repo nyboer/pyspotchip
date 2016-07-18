@@ -168,10 +168,11 @@ def get_playlists():
 
 def next_playlist():
     global current_playlist
+    global tracks
     list_count = len(playlists['items'])
     # make sure it doesn't go out of bounds and wraps:
     current_playlist = (current_playlist + 1) % list_count
-    init_playlist(current_playlist)
+    tracks = init_playlist(current_playlist)
     playlist_track(True)
 
 def print_all_tracks(playlists):
