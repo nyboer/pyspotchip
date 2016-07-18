@@ -1,6 +1,7 @@
 
 # track analysis_url details at http://developer.echonest.com/docs/v4/_static/AnalyzeDocumentation.pdf
 # shows acoustic features for tracks for the given artist
+# current docs are https://developer.spotify.com/web-api/get-audio-features/
 
 from __future__ import print_function    # (at top of module)
 from spotipy.oauth2 import SpotifyClientCredentials

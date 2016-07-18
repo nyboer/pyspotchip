@@ -124,6 +124,7 @@ def to_next_section(t):
         session.player.seek(totime)
 
 def init_playlist(pl_index):
+    #https://developer.spotify.com/web-api/get-playlists-tracks/
     global track_count
     global section_count
     section_count = 1 #reset for new track.
