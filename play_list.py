@@ -108,8 +108,9 @@ def add_to_usongs():
 
 #advance to next track in playlist
 def to_next_track():
-    print('to next track')
+    global section_count
     section_count = 0 #reset for new track.
+    print('to next track')
     session.player.unload()
     playlist_track()
 
